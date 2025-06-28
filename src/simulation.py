@@ -39,8 +39,6 @@ class SaboteurSimulation:
         self.logger = SimulationLogger()
         self.scoring = ScoringSystem()
         
-        # Connect logger to display for rich output capture
-        self.display.set_logger(self.logger)
         self.agents: List[Agent] = []
         self.current_round = 0
         self.max_rounds = 20

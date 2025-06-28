@@ -167,8 +167,9 @@ class SimulationLogger:
         # Log to text file
         self.file_console.print(formatted_message)
         
-        # Log to HTML console (preserves rich formatting)
-        self.html_console.print(formatted_message)
+        # Log to HTML console (preserves rich formatting) - for export only
+        if hasattr(self, 'html_console'):
+            self.html_console.print(formatted_message)
         
         # Add to current round events
         if self.simulation_data["rounds"]:

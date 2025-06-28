@@ -76,8 +76,6 @@ class DisplayManager:
         self.console.print(header)
         self.console.print()
         
-        # Log to HTML
-        self._log_display(str(header))
     
     def display_agent_turn(self, agent_name: str, role: str, suspicion_data: dict = None):
         """Display agent turn header with optional suspicion tracking"""
@@ -102,9 +100,6 @@ class DisplayManager:
         self.console.print()
         panel = Panel(content, style=bright_color, expand=False)
         self.console.print(panel)
-        
-        # Log to HTML
-        self._log_display(panel)
     
     def _create_suspicion_bar(self, score: int, color_scheme: str = "red") -> str:
         """Create visual suspicion bar"""
