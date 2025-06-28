@@ -89,13 +89,13 @@ class DisplayManager:
         # Add suspicion tracking display
         if suspicion_data:
             if role == "honeypot" and suspicion_data.get('suspicion_scores'):
-                content += "\n[dim]🔍 Saboteur Suspicion Levels:[/dim]"
+                content += "\n[dim]🔍 Team Behavior Analysis:[/dim]"
                 for agent, score in suspicion_data['suspicion_scores'].items():
                     bar = self._create_suspicion_bar(score)
                     content += f"\n  {agent}: {bar} {score}%"
             
             elif role == "saboteur" and suspicion_data.get('honeypot_detection'):
-                content += "\n[dim]🕵️ Honeypot Detection:[/dim]"
+                content += "\n[dim]🕵️ Team Monitoring Assessment:[/dim]"
                 for agent, score in suspicion_data['honeypot_detection'].items():
                     bar = self._create_suspicion_bar(score, "blue")
                     content += f"\n  {agent}: {bar} {score}%"

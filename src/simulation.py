@@ -166,11 +166,11 @@ class SaboteurSimulation:
             # Update suspicion tracking
             agent.update_suspicion_tracking(context)
             
-            # Prepare suspicion data for display
+            # Prepare suspicion data for display (always show if agent has tracking)
             suspicion_data = {}
-            if agent.role == Role.HONEYPOT and agent.suspicion_scores:
+            if agent.role == Role.HONEYPOT:
                 suspicion_data['suspicion_scores'] = agent.suspicion_scores
-            elif agent.role == Role.SABOTEUR and agent.honeypot_detection:
+            elif agent.role == Role.SABOTEUR:
                 suspicion_data['honeypot_detection'] = agent.honeypot_detection
             
             self.display.display_agent_turn(agent.name, agent.role.value, suspicion_data)
