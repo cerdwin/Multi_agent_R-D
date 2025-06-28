@@ -15,13 +15,13 @@ class DisplayManager:
         self.logger = None
         
         # 30 color pairs (bright for speech, darker for actions)
-        # Using rich color names with bright_ prefix for brighter versions
+        # First 5 colors are distinctly different for common use case
         self.color_pairs = [
             ("bright_red", "red"),
+            ("bright_blue", "blue"), 
             ("bright_green", "green"),
-            ("bright_yellow", "yellow3"),
-            ("bright_blue", "blue"),
             ("bright_magenta", "magenta"),
+            ("bright_yellow", "yellow3"),
             ("bright_cyan", "cyan"),
             ("bright_white", "grey70"),
             ("orange1", "dark_orange"),
@@ -56,8 +56,11 @@ class DisplayManager:
                 self.agent_colors[agent_name] = self.color_pairs[self.color_index]
                 self.color_index += 1
             else:
-                # If we run out of predefined colors, generate random
-                self.agent_colors[agent_name] = random.choice(self.color_pairs)
+                # If we run out of predefined colors, use hash-based selection for consistency
+                import hashlib
+                hash_value = int(hashlib.md5(agent_name.encode()).hexdigest(), 16)
+                color_index = hash_value % len(self.color_pairs)
+                self.agent_colors[agent_name] = self.color_pairs[color_index]
         return self.agent_colors[agent_name]
     
     def set_logger(self, logger):
