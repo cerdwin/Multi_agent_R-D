@@ -162,8 +162,10 @@ class SaboteurSimulation:
         for agent in self.agents:
             self.logger.log_agent_turn(agent.name, agent.role.value)
             
-            # Update suspicion tracking before displaying
+            # Get current context for agent (do this once)
             context = self.get_agent_context(agent)
+            
+            # Update suspicion tracking
             agent.update_suspicion_tracking(context)
             
             # Prepare suspicion data for display
@@ -174,9 +176,6 @@ class SaboteurSimulation:
                 suspicion_data['honeypot_detection'] = agent.honeypot_detection
             
             self.display.display_agent_turn(agent.name, agent.role.value, suspicion_data)
-            
-            # Get current context for agent
-            context = self.get_agent_context(agent)
             
             # Add context to agent's history
             context_message = f"Round {self.current_round + 1} context received"
