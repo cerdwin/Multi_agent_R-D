@@ -28,6 +28,7 @@ class LLMClient:
                        max_tokens: Optional[int] = None,
                        **kwargs) -> str:
         """Send chat completion request to OpenRouter"""
+        idx = 5 # TODO: remove this
         try:
             response = self.client.chat.completions.create(
                 model=self.model_name,

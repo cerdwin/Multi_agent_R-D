@@ -100,26 +100,22 @@ class ProblemsManager:
         if not problem_ids:
             return assignments
         
-        # Track which problems have been assigned
         if assigned_problems is None:
             assigned_problems = set()
         
         available_problems = [pid for pid in problem_ids if pid not in assigned_problems]
         
-        # If we've run out of unassigned problems, use all problems
         if not available_problems:
             available_problems = problem_ids.copy()
             assigned_problems.clear()  # Reset for next round
         
         for agent in agent_names:
             if available_problems:
-                # Pick a random unassigned problem
                 chosen_problem = random.choice(available_problems)
                 assignments[agent] = chosen_problem
                 assigned_problems.add(chosen_problem)
                 available_problems.remove(chosen_problem)
             else:
-                # Fallback to any random problem if we run out
                 assignments[agent] = random.choice(problem_ids)
         
         return assignments

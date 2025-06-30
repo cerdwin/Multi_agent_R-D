@@ -88,17 +88,38 @@ class DisplayManager:
         
         # Add suspicion tracking display
         if suspicion_data:
-            if role == "honeypot" and suspicion_data.get('suspicion_scores'):
-                content += "\n[dim]🔍 Team Behavior Analysis:[/dim]"
-                for agent, score in suspicion_data['suspicion_scores'].items():
-                    bar = self._create_suspicion_bar(score)
-                    content += f"\n  {agent}: {bar} {score}%"
+            if role == "honeypot":
+                if suspicion_data.get('suspicion_scores'):
+                    content += "\n[dim]🔍 Saboteur Suspicion:[/dim]"
+                    for agent, score in suspicion_data['suspicion_scores'].items():
+                        bar = self._create_suspicion_bar(score)
+                        content += f"\n  {agent}: {bar} {score}%"
+                
+                if suspicion_data.get('honeypot_suspicion'):
+                    content += "\n[dim]🍯 Honeypot Detection:[/dim]"
+                    for agent, score in suspicion_data['honeypot_suspicion'].items():
+                        bar = self._create_suspicion_bar(score, "green")
+                        content += f"\n  {agent}: {bar} {score}%"
             
-            elif role == "saboteur" and suspicion_data.get('honeypot_detection'):
-                content += "\n[dim]🕵️ Team Monitoring Assessment:[/dim]"
-                for agent, score in suspicion_data['honeypot_detection'].items():
-                    bar = self._create_suspicion_bar(score, "blue")
-                    content += f"\n  {agent}: {bar} {score}%"
+            elif role == "saboteur":
+                if suspicion_data.get('honeypot_detection'):
+                    content += "\n[dim]🕵️ Honeypot Detection:[/dim]"
+                    for agent, score in suspicion_data['honeypot_detection'].items():
+                        bar = self._create_suspicion_bar(score, "blue")
+                        content += f"\n  {agent}: {bar} {score}%"
+                
+                if suspicion_data.get('saboteur_suspicion'):
+                    content += "\n[dim]🤝 Ally Detection:[/dim]"
+                    for agent, score in suspicion_data['saboteur_suspicion'].items():
+                        bar = self._create_suspicion_bar(score, "purple")
+                        content += f"\n  {agent}: {bar} {score}%"
+            
+            elif role == "worker":
+                if suspicion_data.get('efficiency_ratings'):
+                    content += "\n[dim]⚡ Team Efficiency:[/dim]"
+                    for agent, score in suspicion_data['efficiency_ratings'].items():
+                        bar = self._create_suspicion_bar(score, "cyan")
+                        content += f"\n  {agent}: {bar} {score}%"
         
         self.console.print()
         panel = Panel(content, style=bright_color, expand=False)
@@ -108,6 +129,12 @@ class DisplayManager:
         """Create visual suspicion bar"""
         if color_scheme == "blue":
             colors = ["blue", "cyan", "yellow", "orange1", "red"]
+        elif color_scheme == "green":
+            colors = ["green", "spring_green1", "yellow", "gold1", "orange1"]
+        elif color_scheme == "purple":
+            colors = ["purple", "medium_purple", "orchid", "magenta", "red1"]
+        elif color_scheme == "cyan":
+            colors = ["cyan", "turquoise2", "spring_green1", "yellow", "orange1"]
         else:
             colors = ["green", "yellow", "orange1", "red1", "red3"]
         

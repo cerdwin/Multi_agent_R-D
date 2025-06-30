@@ -8,6 +8,8 @@ class MessageManager:
         self.chats: Dict[str, Dict[int, str]] = defaultdict(dict)
         # Group/forum messages: {timestamp: message}
         self.forum: Dict[int, str] = {}
+        # Counter to ensure unique timestamps
+        self._timestamp_counter = 0
         
     def _get_chat_key(self, name1: str, name2: str) -> str:
         """Generate chat key from two names in alphabetical order"""
@@ -15,8 +17,11 @@ class MessageManager:
         return f"{names[0]}_{names[1]}"
     
     def _get_timestamp_key(self) -> int:
-        """Get truncated timestamp for message key"""
-        return int(time.time())
+        """Get unique timestamp for message key"""
+        base_time = int(time.time())
+        self._timestamp_counter += 1
+        # Combine base timestamp with counter to ensure uniqueness
+        return base_time * 10000 + self._timestamp_counter
     
     def send_private_message(self, sender: str, recipient: str, message: str) -> int:
         """Send private message between two agents"""
@@ -55,11 +60,11 @@ class MessageManager:
             
         return sorted_messages
     
-    def get_agent_context(self, agent_name: str, limit_private: int = 10, limit_forum: int = 20) -> Dict[str, List[Tuple[int, str]]]:
+    def get_agent_context(self, agent_name: str, limit_private: int = 10, limit_forum: int = None) -> Dict[str, List[Tuple[int, str]]]:
         """Extract relevant context for an agent"""
         context = {
             "private_chats": {},
-            "forum": self.get_forum_history(limit_forum)
+            "forum": self.get_forum_history(limit_forum)  # No limit by default - agents need full context
         }
         
         # Get private chats involving this agent
