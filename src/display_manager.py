@@ -138,8 +138,9 @@ class DisplayManager:
         else:
             colors = ["green", "yellow", "orange1", "red1", "red3"]
         
-        filled = score // 20  # 0-5 segments
-        color = colors[min(filled, 4)]
+        # Ensure at least 1 filled segment for any non-zero score, max 5 segments
+        filled = max(1, min(5, (score + 19) // 20)) if score > 0 else 0
+        color = colors[min(filled - 1, 4)] if filled > 0 else colors[0]
         
         bar = "█" * filled + "░" * (5 - filled)
         return f"[{color}]{bar}[/{color}]"
@@ -227,7 +228,7 @@ class DisplayManager:
             title = "[bold green]🎯 CORRECT SABOTEUR DETECTED! 🎯[/bold green]"
             border_style = "green"
             confidence_color = "green"
-            extra_text = "\n[bold green]🏆 HONEYPOT WINS! SIMULATION ENDS! 🏆[/bold green]"
+            extra_text = ""
         else:
             title = "[bold red]🚨 SABOTEUR DETECTION 🚨[/bold red]"
             border_style = "red"

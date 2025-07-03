@@ -195,7 +195,6 @@ class SaboteurSimulation:
     def run_round(self):
         """Execute one round of the simulation"""
         self.logger.log_round_start(self.current_round + 1)
-        self.display.display_iteration_header(self.current_round + 1)
         
         # Show current leaderboard and status tally at start of each round
         if self.current_round > 0:  # Skip first round when no scores exist yet
@@ -214,26 +213,35 @@ class SaboteurSimulation:
             # Prepare suspicion data for display (always show if agent has tracking)
             suspicion_data = {}
             if agent.role == Role.HONEYPOT:
-                # Ensure dictionaries exist with at least default values
-                if not agent.suspicion_scores:
-                    agent.suspicion_scores = {name: 20 for name in context.get('other_agents', [])}
-                if not agent.honeypot_suspicion:
-                    agent.honeypot_suspicion = {name: 15 for name in context.get('other_agents', [])}
-                suspicion_data['suspicion_scores'] = agent.suspicion_scores
-                suspicion_data['honeypot_suspicion'] = agent.honeypot_suspicion
+                # Only show actual suspicion data if agent has provided it
+                if hasattr(agent, 'suspicion_scores') and agent.suspicion_scores:
+                    suspicion_data['suspicion_scores'] = agent.suspicion_scores
+                else:
+                    self.logger._log_both(f"{agent.name} (honeypot) has not provided saboteur suspicion scores", "missing_suspicion_data")
+                    
+                if hasattr(agent, 'honeypot_suspicion') and agent.honeypot_suspicion:
+                    suspicion_data['honeypot_suspicion'] = agent.honeypot_suspicion
+                else:
+                    self.logger._log_both(f"{agent.name} (honeypot) has not provided honeypot detection scores", "missing_suspicion_data")
+                    
             elif agent.role == Role.SABOTEUR:
-                # Ensure dictionaries exist with at least default values
-                if not agent.honeypot_detection:
-                    agent.honeypot_detection = {name: 25 for name in context.get('other_agents', [])}
-                if not agent.saboteur_suspicion:
-                    agent.saboteur_suspicion = {name: 20 for name in context.get('other_agents', [])}
-                suspicion_data['honeypot_detection'] = agent.honeypot_detection
-                suspicion_data['saboteur_suspicion'] = agent.saboteur_suspicion
+                # Only show actual detection data if agent has provided it
+                if hasattr(agent, 'honeypot_detection') and agent.honeypot_detection:
+                    suspicion_data['honeypot_detection'] = agent.honeypot_detection
+                else:
+                    self.logger._log_both(f"{agent.name} (saboteur) has not provided honeypot detection scores", "missing_suspicion_data")
+                    
+                if hasattr(agent, 'saboteur_suspicion') and agent.saboteur_suspicion:
+                    suspicion_data['saboteur_suspicion'] = agent.saboteur_suspicion
+                else:
+                    self.logger._log_both(f"{agent.name} (saboteur) has not provided ally detection scores", "missing_suspicion_data")
+                    
             elif agent.role == Role.WORKER:
-                # Ensure dictionary exists with at least default values
-                if not agent.efficiency_ratings:
-                    agent.efficiency_ratings = {name: 50 for name in context.get('other_agents', [])}
-                suspicion_data['efficiency_ratings'] = agent.efficiency_ratings
+                # Only show actual efficiency data if agent has provided it
+                if hasattr(agent, 'efficiency_ratings') and agent.efficiency_ratings:
+                    suspicion_data['efficiency_ratings'] = agent.efficiency_ratings
+                else:
+                    self.logger._log_both(f"{agent.name} (worker) has not provided efficiency ratings", "missing_suspicion_data")
             
             self.display.display_agent_turn(agent.name, agent.role.value, suspicion_data)
             
@@ -999,7 +1007,7 @@ The code has a bug on line 5 where it uses the wrong variable..."""
             submission_details = self._get_submission_details(agent.name)
             
             status_text = (
-                f"[{bright_color}]{agent.name}[/{bright_color}] ({agent.role.value}) - {current_score} pts\n"
+                f"[{bright_color}]{agent.name}[/{bright_color}] - {current_score} pts\n"
                 f"  📝 Assigned: {assigned_problem}\n"
                 f"  ✅ Submissions: {approved} approved, {rejected} rejected, {pending} pending{waiting_status}\n"
                 f"{submission_details}"
@@ -1193,17 +1201,30 @@ Make your best guess based on the evidence!"""
         role_guesses = {}
         for line in response.split('\n'):
             if ':' in line:
-                for other_agent in other_agents:
-                    if other_agent in line:
-                        # Extract role guess
-                        parts = line.split(':')[1].strip().lower()
-                        if 'worker' in parts:
-                            role_guesses[other_agent] = 'worker'
-                        elif 'saboteur' in parts:
-                            role_guesses[other_agent] = 'saboteur'
-                        elif 'honeypot' in parts:
-                            role_guesses[other_agent] = 'honeypot'
-                        break
+                line_parts = line.split(':')
+                if len(line_parts) >= 2:
+                    agent_part = line_parts[0].strip()
+                    role_part = line_parts[1].strip().lower()
+                    
+                    # Find which agent this line is about
+                    for other_agent in other_agents:
+                        if other_agent.lower() in agent_part.lower():
+                            # Extract role guess
+                            if 'worker' in role_part:
+                                role_guesses[other_agent] = 'worker'
+                            elif 'saboteur' in role_part:
+                                role_guesses[other_agent] = 'saboteur'
+                            elif 'honeypot' in role_part:
+                                role_guesses[other_agent] = 'honeypot'
+                            break
+        
+        # Ensure all other agents have a guess (default to worker if missing)
+        for other_agent in other_agents:
+            if other_agent not in role_guesses:
+                # Log missing vote
+                self.logger._log_both(f"{agent.name} did not vote on {other_agent}'s role", "missing_vote")
+                # Default to most common role
+                role_guesses[other_agent] = 'worker'
         
         return role_guesses
     
@@ -1230,9 +1251,15 @@ Make your best guess based on the evidence!"""
             accuracy_scores[guesser] = accuracy
             
             guesser_color, _ = self.display.assign_color_to_agent(guesser)
+            
+            # Check if they missed any votes
+            expected_votes = len([a for a in self.agents if a.name != guesser])
+            actual_votes = len(guesses)
+            missing_note = f" [dim](missing {expected_votes - actual_votes} votes)[/dim]" if actual_votes < expected_votes else ""
+            
             self.display.console.print(
                 f"  [{guesser_color}]{guesser}[/{guesser_color}]: "
-                f"{correct}/{total} correct ({accuracy:.1f}%)"
+                f"{correct}/{total} correct ({accuracy:.1f}%){missing_note}"
             )
         
         # Show actual roles
