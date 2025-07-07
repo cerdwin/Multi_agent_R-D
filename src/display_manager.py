@@ -27,7 +27,7 @@ class DisplayManager:
             ("orange1", "dark_orange"),
             ("purple", "medium_purple"),
             ("turquoise2", "dark_turquoise"),
-            ("spring_green1", "sea_green"),
+            ("spring_green1", "dark_green"),
             ("deep_pink1", "medium_violet_red"),
             ("gold1", "dark_goldenrod"),
             ("sky_blue1", "steel_blue"),
@@ -50,17 +50,13 @@ class DisplayManager:
         ]
         
     def assign_color_to_agent(self, agent_name: str) -> Tuple[str, str]:
-        """Assign a unique color pair to an agent"""
+        """Assign a unique color pair to an agent - deterministic based on agent name"""
         if agent_name not in self.agent_colors:
-            if self.color_index < len(self.color_pairs):
-                self.agent_colors[agent_name] = self.color_pairs[self.color_index]
-                self.color_index += 1
-            else:
-                # If we run out of predefined colors, use hash-based selection for consistency
-                import hashlib
-                hash_value = int(hashlib.md5(agent_name.encode()).hexdigest(), 16)
-                color_index = hash_value % len(self.color_pairs)
-                self.agent_colors[agent_name] = self.color_pairs[color_index]
+            # Use a deterministic hash-based approach for consistent colors
+            import hashlib
+            hash_value = int(hashlib.md5(agent_name.encode()).hexdigest(), 16)
+            color_index = hash_value % len(self.color_pairs)
+            self.agent_colors[agent_name] = self.color_pairs[color_index]
         return self.agent_colors[agent_name]
     
     def set_logger(self, logger):
@@ -86,64 +82,90 @@ class DisplayManager:
         
         content = f"[bold {bright_color}]AGENT {agent_name.upper()}[/bold {bright_color}]\n[italic]Role: {role}[/italic]"
         
+        # Get timing info for fade effect
+        current_round = suspicion_data.get('current_round', 0) if suspicion_data else 0
+        last_update = suspicion_data.get('last_update_round', None) if suspicion_data else None
+        
+        # Calculate fade level (0 = bright/new, higher = more faded)
+        fade_level = 0
+        if last_update is not None:
+            rounds_since_update = current_round - last_update
+            fade_level = min(3, rounds_since_update)  # Max 3 levels of fade
+        
         # Add suspicion tracking display
         if suspicion_data:
             if role == "honeypot":
                 if suspicion_data.get('suspicion_scores'):
                     content += "\n[dim]🔍 Saboteur Suspicion:[/dim]"
                     for agent, score in suspicion_data['suspicion_scores'].items():
-                        bar = self._create_suspicion_bar(score)
+                        bar = self._create_suspicion_bar(score, "red", fade_level)
                         content += f"\n  {agent}: {bar} {score}%"
                 
                 if suspicion_data.get('honeypot_suspicion'):
                     content += "\n[dim]🍯 Honeypot Detection:[/dim]"
                     for agent, score in suspicion_data['honeypot_suspicion'].items():
-                        bar = self._create_suspicion_bar(score, "green")
+                        bar = self._create_suspicion_bar(score, "green", fade_level)
                         content += f"\n  {agent}: {bar} {score}%"
             
             elif role == "saboteur":
                 if suspicion_data.get('honeypot_detection'):
                     content += "\n[dim]🕵️ Honeypot Detection:[/dim]"
                     for agent, score in suspicion_data['honeypot_detection'].items():
-                        bar = self._create_suspicion_bar(score, "blue")
+                        bar = self._create_suspicion_bar(score, "blue", fade_level)
                         content += f"\n  {agent}: {bar} {score}%"
                 
                 if suspicion_data.get('saboteur_suspicion'):
                     content += "\n[dim]🤝 Ally Detection:[/dim]"
                     for agent, score in suspicion_data['saboteur_suspicion'].items():
-                        bar = self._create_suspicion_bar(score, "purple")
+                        bar = self._create_suspicion_bar(score, "purple", fade_level)
                         content += f"\n  {agent}: {bar} {score}%"
             
             elif role == "worker":
                 if suspicion_data.get('efficiency_ratings'):
                     content += "\n[dim]⚡ Team Efficiency:[/dim]"
                     for agent, score in suspicion_data['efficiency_ratings'].items():
-                        bar = self._create_suspicion_bar(score, "cyan")
+                        bar = self._create_suspicion_bar(score, "cyan", fade_level)
                         content += f"\n  {agent}: {bar} {score}%"
         
         self.console.print()
         panel = Panel(content, style=bright_color, expand=False)
         self.console.print(panel)
     
-    def _create_suspicion_bar(self, score: int, color_scheme: str = "red") -> str:
-        """Create visual suspicion bar"""
-        if color_scheme == "blue":
-            colors = ["blue", "cyan", "yellow", "orange1", "red"]
-        elif color_scheme == "green":
-            colors = ["green", "spring_green1", "yellow", "gold1", "orange1"]
-        elif color_scheme == "purple":
-            colors = ["purple", "medium_purple", "orchid", "magenta", "red1"]
-        elif color_scheme == "cyan":
-            colors = ["cyan", "turquoise2", "spring_green1", "yellow", "orange1"]
-        else:
-            colors = ["green", "yellow", "orange1", "red1", "red3"]
+    def _create_suspicion_bar(self, score: int, color_scheme: str = "red", fade_level: int = 0) -> str:
+        """Create visual suspicion bar with fade effect based on recency"""
+        # Use a single base color for each type of rating
+        base_colors = {
+            "red": "red",      # Saboteur suspicion
+            "green": "green",  # Honeypot suspicion  
+            "blue": "blue",    # Honeypot detection
+            "purple": "purple", # Ally detection
+            "cyan": "cyan"     # Efficiency ratings
+        }
+        
+        base_color = base_colors.get(color_scheme, "white")
         
         # Ensure at least 1 filled segment for any non-zero score, max 5 segments
         filled = max(1, min(5, (score + 19) // 20)) if score > 0 else 0
-        color = colors[min(filled - 1, 4)] if filled > 0 else colors[0]
         
-        bar = "█" * filled + "░" * (5 - filled)
-        return f"[{color}]{bar}[/{color}]"
+        # Apply fade based on how old the data is - same color, different brightness
+        if fade_level == 0:
+            # Fresh data - bright and bold
+            bar = "█" * filled + "░" * (5 - filled)
+            style = f"bold bright_{base_color}" if f"bright_{base_color}" in ["bright_red", "bright_green", "bright_blue", "bright_cyan"] else f"bold {base_color}"
+        elif fade_level == 1:
+            # 1 round old - normal brightness
+            bar = "█" * filled + "░" * (5 - filled)
+            style = base_color
+        elif fade_level == 2:
+            # 2 rounds old - dim
+            bar = "▓" * filled + "░" * (5 - filled)
+            style = f"dim {base_color}"
+        else:
+            # 3+ rounds old - very dim with dotted blocks
+            bar = "▒" * filled + "░" * (5 - filled)
+            style = f"dim {base_color}"
+        
+        return f"[{style}]{bar}[/{style}]"
     
     def display_agent_speech(self, agent_name: str, message: str):
         """Display agent speech (bright color)"""

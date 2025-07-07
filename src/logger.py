@@ -25,8 +25,9 @@ class SimulationLogger:
             force_terminal=False
         )
         
-        # Console for HTML export (with rich formatting)
-        self.html_console = Console(record=True, width=120)
+        # Console for HTML export (with rich formatting) - record only, no direct output
+        from io import StringIO
+        self.html_console = Console(record=True, width=120, file=StringIO())
         
         # Data storage for JSON export
         self.simulation_data = {
@@ -40,7 +41,7 @@ class SimulationLogger:
         
         self.current_round = 0
     
-    def log_simulation_start(self, agents: list, max_rounds: int):
+    def log_simulation_start(self, agents: list, max_rounds: int, config: dict = None):
         """Log simulation initialization"""
         self.simulation_data["metadata"] = {
             "max_rounds": max_rounds,
@@ -48,11 +49,22 @@ class SimulationLogger:
             "start_time": datetime.now().isoformat()
         }
         
+        # Log model configuration if available
+        if config:
+            model_configs = config.get('llm', {}).get('models', {})
+            self.simulation_data["metadata"]["model_configuration"] = model_configs
+        
         for agent in agents:
-            self.simulation_data["agents"][agent.name] = {
+            agent_data = {
                 "role": agent.role.value,
                 "goals": agent.goals if hasattr(agent, 'goals') else []
             }
+            
+            # Add model information if available
+            if hasattr(agent, 'llm_client') and hasattr(agent.llm_client, 'model_name'):
+                agent_data["model"] = agent.llm_client.model_name
+            
+            self.simulation_data["agents"][agent.name] = agent_data
         
         message = f"🚀 Starting Saboteur Simulation with {len(agents)} agents for {max_rounds} rounds"
         self._log_both(message, "simulation_start")

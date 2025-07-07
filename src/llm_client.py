@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class LLMClient:
-    def __init__(self):
+    def __init__(self, model_name: Optional[str] = None):
         self.api_key = os.getenv("OPENROUTER_API_KEY")
-        self.model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
+        self.model_name = model_name or os.getenv("MODEL_NAME", "gpt-4o-mini")
         self.base_url = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
         self.max_tokens = int(os.getenv("MAX_TOKENS", "1000"))
         self.temperature = float(os.getenv("TEMPERATURE", "0.7"))

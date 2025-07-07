@@ -20,6 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+saboteur_bench.egg-info/
 
 # uv (Python package manager)
 .venv/
@@ -80,3 +81,6 @@ api_keys.txt
 
 # Project documentation (keep local only)
 CLAUDE.md 
+
+# Archive folder (deprecated/experimental files)
+archive/
