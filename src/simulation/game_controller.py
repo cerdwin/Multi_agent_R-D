@@ -272,7 +272,10 @@ class GameController:
         
         # Run CoT monitor analysis at end of round
         if self.cot_monitoring and self.cot_monitor and not self.simulation_ended:
-            self.cot_monitor.analyze_epoch(self.current_round + 1)
+            analysis = self.cot_monitor.analyze_epoch(self.current_round + 1)
+            # Display the analysis summary
+            self.display.console.print("\n[blue bold]🔍 CoT Monitor Analysis - Round {}[/blue bold]".format(self.current_round + 1))
+            self.display.console.print(analysis['analysis'])
     
     def _execute_agent_turn(self, agent: Agent):
         """Execute a single agent's turn"""

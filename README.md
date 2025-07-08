@@ -163,6 +163,14 @@ llm:
 - **watermark_coordination**: Configure saboteur coordination mechanics
 - **max_rounds**: Simulation length (default: 20)
 
+### Advanced LLM Configuration
+You can override the default temperature and max tokens in your `.env` file:
+```bash
+TEMPERATURE=0.7  # Controls randomness (0.0-1.0, default: 0.7)
+MAX_TOKENS=1000  # Maximum response length (default: 1000)
+```
+Note: These settings apply to all LLM calls. The config.yaml LLM settings are currently not used.
+
 ## Scoring
 
 | Action | Points |

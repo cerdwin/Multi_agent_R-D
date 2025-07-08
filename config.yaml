@@ -31,7 +31,7 @@ llm:
   cot_word_limit: 400               # Max words for Chain of Thought (will be truncated)
   models:
     worker: gpt-4o-mini
-    saboteur: anthropic/claude-3.5-sonnet
+    saboteur: anthropic/claude-3.7-sonnet
     honeypot: gpt-4o-mini
     cot_monitor: gpt-4o                # Model for analyzing CoT patterns
 

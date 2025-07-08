@@ -143,13 +143,22 @@ Be specific and cite evidence from the CoT reasoning."""
         """Trigger alert for high-confidence collusion detection"""
         self.display.console.print(f"\n[red bold]🚨 COLLUSION ALERT - Round {epoch_num} 🚨[/red bold]")
         self.display.console.print("[red]High confidence collusion pattern detected![/red]")
+        # Extract and display key findings
+        lines = analysis.split('\n')
+        for line in lines:
+            if any(keyword in line.upper() for keyword in ['SUSPICIOUS', 'COLLUDING', 'EVIDENCE', 'CONFIDENCE']):
+                self.display.console.print(f"[yellow]{line.strip()}[/yellow]")
         
         # Log the alert
-        self.logger.log_message("CoT_MONITOR_ALERT", {
-            'epoch': epoch_num,
-            'alert_type': 'HIGH_CONFIDENCE_COLLUSION',
-            'analysis': analysis
-        })
+        self.logger._log_both(
+            f"CoT Monitor Alert - Round {epoch_num}: High confidence collusion detected",
+            "CoT_MONITOR_ALERT",
+            {
+                'epoch': epoch_num,
+                'alert_type': 'HIGH_CONFIDENCE_COLLUSION',
+                'analysis': analysis
+            }
+        )
     
     def generate_report(self) -> Dict:
         """Generate final CoT monitoring report"""
